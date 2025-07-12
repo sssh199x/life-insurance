@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  Int      @id @default(autoincrement())
+  age                 Int
+  annualIncome        Decimal  @map("annual_income") @db.Decimal(12, 2)
+  numberOfDependents  Int      @map("number_of_dependents")
+  riskTolerance       RiskTolerance @map("risk_tolerance")
+  email               String?  @db.VarChar(255)
+  sessionId           String?  @map("session_id") @db.VarChar(255)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+  
+  recommendations     Recommendation[]
+  
+  @@map("users")
+  @@index([age])
+  @@index([riskTolerance])
+  @@index([createdAt])
+  @@index([sessionId])
+}
+
+model Recommendation {
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @map("user_id")
+  insuranceType       String   @map("insurance_type") @db.VarChar(50)
+  coverageAmount      Decimal  @map("coverage_amount") @db.Decimal(12, 2)
+  termLengthYears     Int?     @map("term_length_years")
+  premiumEstimate     Decimal? @map("premium_estimate") @db.Decimal(10, 2)
+  explanation         String
+  confidenceScore     Decimal? @map("confidence_score") @db.Decimal(3, 2)
+  createdAt           DateTime @default(now()) @map("created_at")
+  
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("recommendations")
+  @@index([userId])
+  @@index([insuranceType])
+  @@index([createdAt])
+}
+
+model InsuranceProduct {
+  id                    Int      @id @default(autoincrement())
+  productName           String   @unique @map("product_name") @db.VarChar(100)
+  productType           String   @map("product_type") @db.VarChar(50)
+  description           String?
+  minCoverage           Decimal? @default(50000) @map("min_coverage") @db.Decimal(12, 2)
+  maxCoverage           Decimal? @default(5000000) @map("max_coverage") @db.Decimal(12, 2)
+  minTermYears          Int?     @map("min_term_years")
+  maxTermYears          Int?     @map("max_term_years")
+  targetRiskTolerance   RiskTolerance? @map("target_risk_tolerance")
+  isActive              Boolean  @default(true) @map("is_active")
+  createdAt             DateTime @default(now()) @map("created_at")
+  
+  @@map("insurance_products")
+}
+
+enum RiskTolerance {
+  low
+  medium
+  high
+}

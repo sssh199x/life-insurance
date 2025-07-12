@@ -7,25 +7,15 @@ import { v4 as uuidv4 } from 'uuid'
 const prisma = new PrismaClient()
 
 export class RecommendationController {
-  /**
+/**
    * POST /api/recommendation
    * Generate insurance recommendation for user
+   * Note: Request validation is handled by middleware
    */
-  static async getRecommendation(req: Request, res: Response) {
+static async getRecommendation(req: Request, res: Response) {
     try {
-      // Validate request body
-      const validationResult = RecommendationRequestSchema.safeParse(req.body)
-      
-      if (!validationResult.success) {
-        const response: ApiError = {
-          success: false,
-          error: 'Invalid request data',
-          details: validationResult.error.format()
-        }
-        return res.status(400).json(response)
-      }
-
-      const requestData = validationResult.data
+      // req.body is already validated by middleware
+      const requestData = req.body
 
       // Generate session ID if not provided
       const sessionId = requestData.sessionId || uuidv4()
@@ -86,8 +76,7 @@ export class RecommendationController {
       
       const response: ApiError = {
         success: false,
-        error: 'Failed to generate recommendation',
-        details: process.env.NODE_ENV !== 'production' ? error : undefined
+        error: 'Failed to generate recommendation'
       }
       
       res.status(500).json(response)

@@ -59,7 +59,7 @@ export function useFormAutoSave({
     if (clearError && isDirty) {
       clearError()
     }
-  }, [watchedValues, clearError, isDirty])
+  }, [isDirty])
 
   return {
     isStorageLoaded: storageLoaded,

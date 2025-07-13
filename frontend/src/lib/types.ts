@@ -1,6 +1,3 @@
-// API Request/Response Types
-
-
 export type RiskTolerance = 'low' | 'medium' | 'high'
 export type InsuranceType = 'term_life' | 'whole_life' | 'universal_life'
 
@@ -24,23 +21,23 @@ export interface RecommendationResponse {
     user: {
       id: number
       age: number
-      annual_income: number
-      number_of_dependents: number
-      risk_tolerance: RiskTolerance
-      session_id: string | null
-      created_at: string
-      updated_at: string
+      annualIncome: number
+      numberOfDependents: number
+      riskTolerance: RiskTolerance
+      sessionId?: string | null
+      createdAt?: string 
+      updatedAt?: string
     }
     recommendation: {
-      id: number
-      user_id: number
-      insurance_type: InsuranceType
-      coverage_amount: number
-      term_length_years: number | null
-      premium_estimate: number
+      id?: number
+      userId?: number
+      insuranceType: InsuranceType
+      coverageAmount: number
+      termLengthYears: number | null
+      premiumEstimate: number
       explanation: string
-      confidence_score: number
-      created_at: string
+      confidenceScore: number       
+      createdAt?: string
     }
   }
 }
@@ -50,16 +47,16 @@ export interface RecommendationResponse {
  */
 export interface InsuranceProduct {
   id: number
-  product_name: string
-  product_type: InsuranceType
+  productName: string
+  productType: InsuranceType
   description: string
-  min_coverage: number
-  max_coverage: number
-  min_term_years: number | null
-  max_term_years: number | null
-  target_risk_tolerance: RiskTolerance
-  is_active: boolean
-  created_at: string
+  minCoverage: number
+  maxCoverage: number
+  minTermYears: number | null
+  maxTermYears: number | null
+  targetRiskTolerance: RiskTolerance 
+  isActive: boolean 
+  createdAt: string
 }
 
 /**

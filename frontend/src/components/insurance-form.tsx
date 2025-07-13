@@ -10,7 +10,6 @@ import {
   ComprehensiveFormFields,
   FormValidationDisplay,
   FormStateManager,
-  useFormRecovery
 } from '@/components/forms'
 
 // UI Components
@@ -52,7 +51,6 @@ export function InsuranceForm({ onRecommendationReceived, className }: Insurance
   
   const { validateRecommendationData } = useRecommendationValidation()
   const { sessionId, isLoaded: storageLoaded } = useLocalStorage()
-  const { hasRecoverableData } = useFormRecovery()
 
   // Form setup with React Hook Form + Zod
   const form = useForm<FormData>({

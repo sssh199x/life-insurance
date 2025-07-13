@@ -29,26 +29,36 @@ interface UseRecommendationReturn extends UseRecommendationState {
 
 /**
  * Transform backend response to frontend-friendly format
- * Handle both camelCase and snake_case responses from backend
  */
 function transformRecommendationResponse(response: RecommendationResponse): ProcessedRecommendation {
   const { user, recommendation } = response.data
   
-  // Handle both camelCase (actual backend) and snake_case (types definition)
-  const insuranceType = (recommendation as any).insuranceType || (recommendation as any).insurance_type
-  const coverageAmount = (recommendation as any).coverageAmount || (recommendation as any).coverage_amount  
-  const termLengthYears = (recommendation as any).termLengthYears || (recommendation as any).term_length_years
-  const premiumEstimate = (recommendation as any).premiumEstimate || (recommendation as any).premium_estimate
-  const explanation = (recommendation as any).explanation
-  const confidenceScore = (recommendation as any).confidenceScore || (recommendation as any).confidence_score
-  const createdAt = (recommendation as any).createdAt || (recommendation as any).created_at
-  const recommendationId = (recommendation as any).id
-
-  // Handle user data (both camelCase and snake_case)
-  const userAge = (user as any).age
-  const userIncome = (user as any).annualIncome || (user as any).annual_income
-  const userDependents = (user as any).numberOfDependents || (user as any).number_of_dependents
-  const userRiskTolerance = (user as any).riskTolerance || (user as any).risk_tolerance
+  const insuranceType = recommendation.insuranceType
+  const coverageAmount = recommendation.coverageAmount  
+  const termLengthYears = recommendation.termLengthYears
+  const premiumEstimate = recommendation.premiumEstimate
+  const explanation = recommendation.explanation
+  const confidenceScore = recommendation.confidenceScore
+  
+  // Extract user data
+  const userAge = user.age
+  const userIncome = user.annualIncome
+  const userDependents = user.numberOfDependents
+  const userRiskTolerance = user.riskTolerance
+  
+  // Generate recommendation ID
+  const recommendationId = recommendation.id || Date.now()
+  
+  // Additional debug logging
+  console.log('🔍 Extracted values:', {
+    userAge,
+    userIncome, 
+    userDependents,
+    userRiskTolerance,
+    insuranceType,
+    coverageAmount,
+    premiumEstimate
+  })
 
   // Transform insurance type to display format
   const getInsuranceTypeDisplay = (type: InsuranceType): string => {
@@ -59,17 +69,33 @@ function transformRecommendationResponse(response: RecommendationResponse): Proc
         return 'Whole Life Insurance'
       case 'universal_life':
         return 'Universal Life Insurance'
-      default:
-        // Fallback for any unexpected values
-        const fallbackType = type as string
-        return capitalize(fallbackType.replace('_', ' '))
     }
   }
 
   // Format term length
   const getTermDisplay = (termLength: number | null): string | null => {
-    if (!termLength) return null
+    if (!termLength || termLength <= 0) return null
     return `${termLength} year${termLength !== 1 ? 's' : ''}`
+  }
+
+  // Validate required fields
+  if (!insuranceType || coverageAmount === undefined || premiumEstimate === undefined) {
+    console.error('❌ Missing required fields in backend response:', {
+      insuranceType,
+      coverageAmount,
+      premiumEstimate
+    })
+    throw new Error('Invalid recommendation data received from server')
+  }
+
+  if (userAge === undefined || userIncome === undefined || userDependents === undefined) {
+    console.error('❌ Missing required user fields in backend response:', {
+      userAge,
+      userIncome,
+      userDependents,
+      userRiskTolerance
+    })
+    throw new Error('Invalid user data received from server')
   }
 
   return {
@@ -93,7 +119,7 @@ function transformRecommendationResponse(response: RecommendationResponse): Proc
     userRiskTolerance: userRiskTolerance,
 
     // Metadata
-    createdAt: createdAt,
+    createdAt: new Date().toISOString(),
     recommendationId: recommendationId,
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Shield, CheckCircle, TrendingUp } from 'lucide-react'
+import { Shield, TrendingUp } from 'lucide-react'
 
 // Extracted Section Components
 import { Header } from '@/components/header'
@@ -34,7 +34,6 @@ import type { ProcessedRecommendation } from '@/lib/types'
 
 /**
  * Main InsureWise application page
- * Clean, component-based architecture with extracted sections
  */
 export default function InsureWisePage() {
   // State for recommendation flow
@@ -70,14 +69,17 @@ export default function InsureWisePage() {
     setTimeout(() => scrollToResults(), 100)
   }
 
-  // Handle request for new recommendation
-  const handleNewRecommendation = () => {
+// Handle request for new recommendation
+const handleNewRecommendation = () => {
+  // Scroll first, THEN hide content
+  scrollToForm()
+  
+  // Wait for scroll to start, then hide content
+  setTimeout(() => {
     setShowRecommendation(false)
     setCurrentRecommendation(null)
-    
-    // Scroll back to form
-    setTimeout(() => scrollToForm(), 100)
-  }
+  }, 300) // Wait for scroll animation to get underway
+}
 
   // Render waiting state for results
   const renderWaitingState = () => (
@@ -115,29 +117,14 @@ export default function InsureWisePage() {
     </Card>
   )
 
-  // Render results section
+  // Render results section 
   const renderResultsSection = () => (
     <div id="recommendation-results" className="space-y-6">
       {showRecommendation && currentRecommendation ? (
-        <div className="space-y-6">
-          <div className="text-center">
-            <Badge variant="success" className="mb-4">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Recommendation Ready
-            </Badge>
-            <h3 className="text-2xl font-bold" style={{ color: 'var(--foreground)' }}>
-              Your Personalized Recommendation
-            </h3>
-            <p className="text-muted-500 mt-2" style={{ color: 'var(--foreground)', opacity: 0.7 }}>
-              Based on your profile and financial situation
-            </p>
-          </div>
-          
-          <RecommendationCard 
-            recommendation={currentRecommendation}
-            onNewRecommendation={handleNewRecommendation}
-          />
-        </div>
+        <RecommendationCard 
+          recommendation={currentRecommendation}
+          onNewRecommendation={handleNewRecommendation}
+        />
       ) : (
         renderWaitingState()
       )}

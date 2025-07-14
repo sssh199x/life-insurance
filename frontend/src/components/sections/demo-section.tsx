@@ -38,8 +38,6 @@ import {
   LoadingProgress
 } from '@/components/ui'
 
-import { RISK_TOLERANCE_OPTIONS, DEPENDENTS_OPTIONS } from '@/lib/constants/form-options'
-
 // Demo data for showcases
 const DEMO_SELECT_OPTIONS = [
   { value: 'option1', label: 'Option 1', description: 'First option description' },
@@ -668,10 +666,4 @@ export function DeveloperDemoSection({ className = "" }: { className?: string })
   )
 }
 
-// Helper component (referenced in performance showcase)
-function Code({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <code className={`${className} font-mono text-sm`}>{children}</code>
-}
-
-// Default export
 export default DemoSection

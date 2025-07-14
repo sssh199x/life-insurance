@@ -188,7 +188,7 @@ export async function checkHealth(): Promise<{
   try {
     const response = await apiClient.get('/health')
     return response.data
-  } catch (error) {
+  } catch (_) {
     if (process.env.NODE_ENV === 'development') {
       console.log('Health check failed - backend may not be running')
     }

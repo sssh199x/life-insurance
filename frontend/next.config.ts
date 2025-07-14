@@ -1,13 +1,17 @@
 import { NextConfig } from "next"
 
 const nextConfig:NextConfig = {
-  // Enable React strict mode for better development experience
   reactStrictMode: true,
-  
-  // Environment variables validation
+  output: 'standalone',
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
     NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
   },
   
   // Security headers

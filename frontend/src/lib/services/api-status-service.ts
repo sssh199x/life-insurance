@@ -113,9 +113,7 @@ export class ApiStatusService {
    */
   static async performHealthCheck(): Promise<HealthCheckResult> {
     try {
-      const startTime = Date.now()
       const healthData = await checkHealth()
-      const responseTime = Date.now() - startTime
 
       return {
         isHealthy: true,
@@ -125,7 +123,7 @@ export class ApiStatusService {
         version: healthData.version,
         timestamp: healthData.timestamp
       }
-    } catch (error) {
+    } catch (_) {
       return {
         isHealthy: false,
         status: 'unhealthy'

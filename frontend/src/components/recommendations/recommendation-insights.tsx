@@ -274,7 +274,6 @@ export function QuickInsights({
  */
 export function ActionableInsights({ 
   recommendation,
-  insights,
   className = ""
 }: { 
   recommendation: ProcessedRecommendation

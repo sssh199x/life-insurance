@@ -40,9 +40,7 @@ function calculateRecommendationStats(recommendation: ProcessedRecommendation): 
     coverageAmount,
     userIncome,
     premiumEstimate,
-    termLength,
-    userAge
-  } = recommendation
+    termLength  } = recommendation
 
   // Coverage ratio (coverage amount vs annual income)
   const coverageRatio = coverageAmount / userIncome
@@ -182,7 +180,7 @@ export function AffordabilityStat({
   recommendation: ProcessedRecommendation
   className?: string 
 }) {
-  const { affordabilityScore, premiumRatio } = calculateRecommendationStats(recommendation)
+  const { affordabilityScore } = calculateRecommendationStats(recommendation)
   
   const scoreConfig = {
     excellent: { 

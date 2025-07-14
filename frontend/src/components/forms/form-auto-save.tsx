@@ -206,7 +206,6 @@ interface FormSessionManagerProps {
  * Handles session timeout and warnings
  */
 export function FormSessionManager({ 
-  sessionId, 
   onSessionExpired, 
   children 
 }: FormSessionManagerProps) {

@@ -43,7 +43,7 @@ export default function NotFound() {
                   Page Not Found
                 </h2>
                 <p className="text-muted-600 leading-relaxed">
-                  We couldn't find the page you're looking for. It might have been moved, 
+                  We couldn`&apos;`t find the page you`&apos;`re looking for. It might have been moved, 
                   deleted, or the URL might be incorrect.
                 </p>
               </div>
@@ -82,7 +82,7 @@ export default function NotFound() {
           {/* Help Section */}
           <div className="mt-8 text-center">
             <p className="text-sm text-muted-500 mb-4">
-              Still need help? We're here to assist you.
+              Still need help? We`&apos;`re here to assist you.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center text-sm">
               <Link 

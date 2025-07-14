@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { getRecommendation } from '@/lib/api'
-import { formatCurrency, capitalize } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import type {
   RecommendationRequest,
   RecommendationResponse,

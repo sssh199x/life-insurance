@@ -128,7 +128,7 @@ export function InsuranceForm({ onRecommendationReceived, className }: Insurance
           isSubmitting={isLoading}
           clearError={clearError}
         >
-          {(formState) => (
+          {() => (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               
               {/* Form Fields */}

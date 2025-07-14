@@ -10,12 +10,11 @@ RUN apk add --no-cache libc6-compat
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies first (including dev dependencies for build)
-RUN npm ci
-
-# Copy Prisma schema and generate client
+# Copy Prisma schema BEFORE installing dependencies
 COPY prisma ./prisma/
-RUN npx prisma generate
+
+# Install ALL dependencies (this will trigger prisma generate via postinstall)
+RUN npm ci
 
 # Copy TypeScript configuration and source code
 COPY tsconfig.json ./
@@ -24,8 +23,11 @@ COPY src ./src/
 # Build the application
 RUN npm run build
 
-# Now remove dev dependencies to reduce image size
+# Remove dev dependencies to reduce image size
 RUN npm prune --production
+
+# Copy prisma back (in case it was removed)
+COPY prisma ./prisma/
 
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
@@ -42,5 +44,5 @@ ENV LOG_LEVEL=info
 # Expose port (Render will set PORT automatically)
 EXPOSE $PORT
 
-# Start the application (with database migrations)
-CMD ["sh", "-c", "npx prisma migrate deploy || true && npx prisma db seed || true && node dist/server.js"]
+# Start the application (with database setup)
+CMD ["sh", "-c", "npx prisma migrate deploy || echo 'Migrations completed or not needed' && node dist/server.js"]

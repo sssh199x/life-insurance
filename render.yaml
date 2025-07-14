@@ -26,6 +26,6 @@ services:
           name: life-insurance-db
           property: connectionString
       - key: ALLOWED_ORIGINS
-        value: https://your-frontend-domain.onrender.com,https://life-insurance-frontend.onrender.com
+        value: https://life-insurance-theta.vercel.app,https://life-insurance-sssh199x.vercel.app
     buildCommand: echo "Using Docker build"
     startCommand: echo "Using Docker CMD"

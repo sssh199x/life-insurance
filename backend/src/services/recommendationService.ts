@@ -1,11 +1,23 @@
 import { RecommendationRequest, RecommendationCalculation, RiskTolerance } from '../types'
+import { logInfo, logDebug, logWarn } from '../utils/logger'
 
 export class RecommendationService {
   /**
    * Calculate insurance recommendation based on user profile
    */
   static calculateRecommendation(request: RecommendationRequest): RecommendationCalculation {
+    const startTime = Date.now()
     const { age, annualIncome, numberOfDependents, riskTolerance } = request
+
+    logDebug('Starting Recommendation Calculation', {
+      user_profile: {
+        age,
+        annual_income: annualIncome,
+        dependents: numberOfDependents,
+        risk_tolerance: riskTolerance
+      },
+      type: 'calculation_start'
+    })
 
     // Calculate coverage amount based on income and dependents
     const coverageAmount = this.calculateCoverageAmount(annualIncome, numberOfDependents, age)
@@ -30,7 +42,7 @@ export class RecommendationService {
     // Calculate confidence score
     const confidenceScore = this.calculateConfidenceScore(request)
 
-    return {
+    const result = {
       insuranceType,
       coverageAmount,
       termLengthYears,
@@ -38,7 +50,54 @@ export class RecommendationService {
       explanation,
       confidenceScore,
     }
+
+    const calculationTime = Date.now() - startTime
+
+    logInfo('Recommendation Calculation Completed', {
+      user_profile: {
+        age,
+        annual_income: annualIncome,
+        dependents: numberOfDependents,
+        risk_tolerance: riskTolerance
+      },
+      result: {
+        insurance_type: insuranceType,
+        coverage_amount: coverageAmount,
+        term_length: termLengthYears,
+        premium_estimate: premiumEstimate,
+        confidence_score: confidenceScore
+      },
+      calculation_time_ms: calculationTime,
+      type: 'calculation_complete'
+    })
+
+    // Log warnings for edge cases
+    if (confidenceScore < 0.7) {
+      logWarn('Low Confidence Recommendation', {
+        confidence_score: confidenceScore,
+        user_profile: { age, annual_income: annualIncome, dependents: numberOfDependents, risk_tolerance: riskTolerance },
+        type: 'low_confidence_warning'
+      })
     }
+
+    if (age > 60 || age < 21) {
+      logWarn('Edge Case Age Detected', {
+        age,
+        insurance_type: insuranceType,
+        type: 'age_edge_case'
+      })
+    }
+
+    if (annualIncome > 500000) {
+      logInfo('High Income User', {
+        annual_income: annualIncome,
+        coverage_amount: coverageAmount,
+        type: 'high_income_user'
+      })
+    }
+
+    return result
+  }
 
   /**
    * Calculate recommended coverage amount
@@ -46,6 +105,14 @@ export class RecommendationService {
    */
   private static calculateCoverageAmount(annualIncome: number, numberOfDependents: number, age: number): number {
     let multiplier = 10 // Base multiplier
+
+    logDebug('Calculating Coverage Amount', {
+      annual_income: annualIncome,
+      dependents: numberOfDependents,
+      age,
+      base_multiplier: multiplier,
+      type: 'coverage_calculation'
+    })
 
     // Adjust multiplier based on age
     if (age < 30) multiplier = 12
@@ -61,7 +128,19 @@ export class RecommendationService {
     const roundedCoverage = Math.round(totalCoverage / 25000) * 25000
     
     // Enforce minimum and maximum limits
-    return Math.max(50000, Math.min(5000000, roundedCoverage))
+    const finalCoverage = Math.max(50000, Math.min(5000000, roundedCoverage))
+
+    logDebug('Coverage Amount Calculated', {
+      base_coverage: baseCoverage,
+      dependent_coverage: dependentCoverage,
+      total_coverage: totalCoverage,
+      rounded_coverage: roundedCoverage,
+      final_coverage: finalCoverage,
+      multiplier_used: multiplier,
+      type: 'coverage_result'
+    })
+
+    return finalCoverage
   }
 
   /**
@@ -71,37 +150,72 @@ export class RecommendationService {
     riskTolerance: RiskTolerance, 
     age: number
   ): 'term_life' | 'whole_life' | 'universal_life' {
+    
+    logDebug('Determining Insurance Type', {
+      risk_tolerance: riskTolerance,
+      age,
+      type: 'insurance_type_calculation'
+    })
+
+    let insuranceType: 'term_life' | 'whole_life' | 'universal_life'
+
     // Young people with any risk tolerance should consider term life
     if (age < 35) {
-      return 'term_life'
+      insuranceType = 'term_life'
     }
-
     // Middle-aged with different risk tolerances
-    if (age < 50) {
-      if (riskTolerance === 'high') return 'universal_life'
-      if (riskTolerance === 'low') return 'whole_life'
-      return 'term_life' // medium risk
+    else if (age < 50) {
+      if (riskTolerance === 'high') insuranceType = 'universal_life'
+      else if (riskTolerance === 'low') insuranceType = 'whole_life'
+      else insuranceType = 'term_life' // medium risk
+    }
+    // Older individuals
+    else {
+      if (riskTolerance === 'high') insuranceType = 'universal_life'
+      else insuranceType = 'whole_life' // low or medium risk
     }
 
-    // Older individuals
-    if (riskTolerance === 'high') return 'universal_life'
-    return 'whole_life' // low or medium risk
+    logDebug('Insurance Type Determined', {
+      risk_tolerance: riskTolerance,
+      age,
+      insurance_type: insuranceType,
+      type: 'insurance_type_result'
+    })
+
+    return insuranceType
   }
 
   /**
    * Calculate term length for term life insurance
    */
   private static calculateTermLength(age: number, numberOfDependents: number): number | undefined {
+    logDebug('Calculating Term Length', {
+      age,
+      dependents: numberOfDependents,
+      type: 'term_calculation'
+    })
+
+    let termLength: number | undefined
+
     // Only applicable for term life insurance
     if (age < 35) {
-      return numberOfDependents > 0 ? 30 : 20
+      termLength = numberOfDependents > 0 ? 30 : 20
     } else if (age < 45) {
-      return numberOfDependents > 0 ? 25 : 20
+      termLength = numberOfDependents > 0 ? 25 : 20
     } else if (age < 55) {
-      return 20
+      termLength = 20
+    } else {
+      termLength = 15 // For older applicants
     }
+
+    logDebug('Term Length Calculated', {
+      age,
+      dependents: numberOfDependents,
+      term_length: termLength,
+      type: 'term_result'
+    })
     
-    return 15 // For older applicants
+    return termLength
   }
 
   /**
@@ -113,6 +227,14 @@ export class RecommendationService {
     insuranceType: string,
     termLength?: number
   ): number {
+    logDebug('Estimating Premium', {
+      coverage_amount: coverageAmount,
+      age,
+      insurance_type: insuranceType,
+      term_length: termLength,
+      type: 'premium_calculation'
+    })
+
     // Base rate per $1000 of coverage per month
     let baseRate = 0.5 // Term life base rate
 
@@ -132,7 +254,18 @@ export class RecommendationService {
     const basePremium = (coverageAmount / 100000) * baseRate * ageFactor * termFactor
 
     // Round to nearest $0.50
-    return Math.round(basePremium * 2) / 2
+    const finalPremium = Math.round(basePremium * 2) / 2
+
+    logDebug('Premium Estimated', {
+      base_rate: baseRate,
+      age_factor: ageFactor,
+      term_factor: termFactor,
+      base_premium: basePremium,
+      final_premium: finalPremium,
+      type: 'premium_result'
+    })
+
+    return finalPremium
   }
 
   /**
@@ -149,6 +282,13 @@ export class RecommendationService {
   ): string {
     const { age, annualIncome, numberOfDependents, riskTolerance } = request
     const { insuranceType, coverageAmount, termLengthYears, premiumEstimate } = recommendation
+
+    logDebug('Generating Explanation', {
+      insurance_type: insuranceType,
+      coverage_amount: coverageAmount,
+      term_length: termLengthYears,
+      type: 'explanation_generation'
+    })
 
     const formattedCoverage = new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -190,6 +330,12 @@ export class RecommendationService {
 
     const { age, annualIncome, numberOfDependents, riskTolerance } = request
 
+    logDebug('Calculating Confidence Score', {
+      base_score: score,
+      user_profile: { age, annual_income: annualIncome, dependents: numberOfDependents, risk_tolerance: riskTolerance },
+      type: 'confidence_calculation'
+    })
+
     // Age factor (most confident for middle-aged applicants)
     if (age >= 25 && age <= 55) {
       score += 0.15
@@ -214,6 +360,19 @@ export class RecommendationService {
       score += 0.05
     }
 
-    return Math.min(0.95, Math.max(0.6, score))
+    const finalScore = Math.min(0.95, Math.max(0.6, score))
+
+    logDebug('Confidence Score Calculated', {
+      final_score: finalScore,
+      score_factors: {
+        age_adjustment: age >= 25 && age <= 55 ? 0.15 : (age >= 18 && age <= 65 ? 0.1 : 0),
+        income_adjustment: annualIncome >= 30000 && annualIncome <= 200000 ? 0.1 : (annualIncome >= 20000 && annualIncome <= 500000 ? 0.05 : 0),
+        dependents_bonus: numberOfDependents > 0 ? 0.1 : 0,
+        risk_tolerance_bonus: riskTolerance === 'medium' ? 0.05 : 0
+      },
+      type: 'confidence_result'
+    })
+
+    return finalScore
   }
 }

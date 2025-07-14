@@ -1,0 +1,31 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: life-insurance-db
+    databaseName: life_insurance
+    user: life_insurance_user
+    plan: free
+
+  # Backend API Service
+  - type: web
+    name: life-insurance-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile.render
+    dockerContext: ./backend
+    region: oregon
+    plan: free
+    branch: main
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: DATABASE_URL
+        fromDatabase:
+          name: life-insurance-db
+          property: connectionString
+      - key: ALLOWED_ORIGINS
+        value: https://your-frontend-domain.onrender.com,https://life-insurance-frontend.onrender.com
+    buildCommand: echo "Using Docker build"
+    startCommand: echo "Using Docker CMD"

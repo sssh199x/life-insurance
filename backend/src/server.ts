@@ -93,7 +93,7 @@ prisma.$on('warn', (e) => {
 const app = express()
 const PORT = process.env.PORT || 3001
 
-// Trust proxy (important for Docker/Kubernetes deployments)
+// Trust proxy (important for Render deployments)
 app.set('trust proxy', 1)
 
 // Security and CORS middleware
@@ -103,10 +103,15 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false
 }))
 
+// Configure CORS for Render deployment
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : process.env.NODE_ENV === 'production' 
+    ? ['https://your-frontend-domain.onrender.com'] 
+    : ['http://localhost:3000', 'http://localhost:3001']
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? (process.env.ALLOWED_ORIGINS?.split(',') || ['https://your-frontend-domain.com'])
-    : ['http://localhost:3000', 'http://localhost:3001'],
+  origin: allowedOrigins,
   credentials: true,
   optionsSuccessStatus: 200
 }))
@@ -137,15 +142,24 @@ app.use(rateLimiter)                  // General rate limiting
 app.use('/api/recommendation', strictRateLimiter)
 app.use('/api', recommendationRoutes)
 
+// Root endpoint for Render health checks
+app.get('/', (req, res) => {
+  res.json({
+    service: 'Life Insurance API',
+    status: 'OK',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  })
+})
+
 // Startup logging
 logInfo('Server Configuration', {
   port: PORT,
   environment: process.env.NODE_ENV || 'development',
   log_level: process.env.LOG_LEVEL || 'info',
   database_url: process.env.DATABASE_URL ? '[CONFIGURED]' : '[NOT SET]',
-  cors_origins: process.env.NODE_ENV === 'production' 
-    ? (process.env.ALLOWED_ORIGINS?.split(',') || ['default'])
-    : ['development'],
+  cors_origins: allowedOrigins,
   type: 'server_config'
 })
 
@@ -219,15 +233,10 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Start server
 const server = app.listen(PORT, () => {
-  logInfo('Life Insurance API Server Started', {
+  logInfo('Life Insurance API Server Started on Render', {
     port: PORT,
     environment: process.env.NODE_ENV || 'development',
-    endpoints: {
-      health: `http://localhost:${PORT}/health`,
-      health_detailed: `http://localhost:${PORT}/health/detailed`,
-      api_base: `http://localhost:${PORT}/api`,
-      metrics: `http://localhost:${PORT}/metrics`
-    },
+    cors_origins: allowedOrigins,
     features: [
       'Helmet Security Headers',
       'CORS Protection', 
@@ -245,11 +254,9 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 Life Insurance API server running on port ${PORT}`)
   console.log(`📊 Health check: http://localhost:${PORT}/health`)
   console.log(`🔗 API base URL: http://localhost:${PORT}/api`)
-  console.log(`📈 Metrics: http://localhost:${PORT}/metrics`)
   console.log(`🛡️  Security: Helmet + CORS + Rate Limiting enabled`)
   console.log(`📊 Logging: Structured JSON logging to stdout`)
   console.log(`⚡ Performance: Request/Response monitoring active`)
 })
 
-// Export app for testing
 export default app

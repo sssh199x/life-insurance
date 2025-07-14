@@ -1,0 +1,152 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: life_insurance
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Changed from 5432:5432 to 5433:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+        labels: "service,version"
+    labels:
+      - "service=postgres"
+      - "version=15"
+
+  # Life Insurance API
+  api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://postgres:password@postgres:5432/life_insurance
+      LOG_LEVEL: info
+      ALLOWED_ORIGINS: http://localhost:3000
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Structured JSON logging to stdout for Docker
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        labels: "service,version,environment"
+        tag: "life-insurance-api"
+    labels:
+      - "service=life-insurance-api"
+      - "version=1.0.0"
+      - "environment=production"
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # Optional: Log aggregation with Fluentd (for advanced setups)
+  fluentd:
+    image: fluent/fluentd:v1.16-debian-1
+    restart: unless-stopped
+    volumes:
+      - ./fluentd.conf:/fluentd/etc/fluent.conf
+      - fluentd_logs:/var/log/fluentd
+    ports:
+      - "24224:24224"
+    environment:
+      FLUENTD_CONF: fluent.conf
+    profiles:
+      - logging  # Only start with --profile logging
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "2"
+
+  # Optional: Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    profiles:
+      - monitoring  # Only start with --profile monitoring
+
+  # Optional: Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    profiles:
+      - monitoring  # Only start with --profile monitoring
+
+volumes:
+  postgres_data:
+  fluentd_logs:
+  prometheus_data:
+  grafana_data:
+
+# Docker commands for log management:
+# 
+# View real-time logs from API:
+# docker-compose logs -f api
+#
+# View logs with timestamps:
+# docker-compose logs -f -t api
+#
+# View last 100 lines:
+# docker-compose logs --tail=100 api
+#
+# Filter logs by level (if using structured logging):
+# docker-compose logs api | jq 'select(.level=="ERROR")'
+#
+# Export logs to file:
+# docker-compose logs --no-color api > api_logs.json
+#
+# Start with monitoring stack:
+# docker-compose --profile monitoring up -d
+#
+# Start with logging stack:
+# docker-compose --profile logging up -d
